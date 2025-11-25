@@ -24,7 +24,7 @@ def handler(event, context):
         
         genai.configure(api_key=api_key)
         # Flash ist schnell und kosteneffizient für Bildanalyse
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-lite')
 
         # 3. Der SYSTEM-PROMPT (Das Herzstück)
         # Hier definieren wir exakt, dass der Output für Referenz-Bild-Generierung sein muss.
