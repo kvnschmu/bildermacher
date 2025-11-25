@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Referenz-Prompt Generator</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; min-height: 100vh; margin: 0; padding: 20px; }
+        .card { background: white; padding: 2rem; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.08); width: 100%; max-width: 600px; }
+        h1 { margin-top: 0; font-size: 1.4rem; text-align: center; color: #1a1a1a; }
+        p.desc { text-align: center; color: #666; font-size: 0.9rem; margin-bottom: 1.5rem; }
+        
+        .upload-area { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: 0.2s; background: #f8fafc; }
+        .upload-area:hover { border-color: #94a3b8; background: #f1f5f9; }
+        input[type="file"] { display: none; }
+        
+        button#generateBtn { width: 100%; margin-top: 1.5rem; padding: 12px; background: #2563eb; color: white; border: none; border-radius: 8px; font-weight: 600; font-size: 1rem; cursor: pointer; transition: 0.2s; }
+        button#generateBtn:hover { background: #1d4ed8; }
+        button#generateBtn:disabled { background: #94a3b8; cursor: wait; }
+
+        .result-box { margin-top: 2rem; display: none; animation: fadeIn 0.3s ease; }
+        label { font-size: 0.85rem; font-weight: 700; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
+        textarea { width: 100%; height: 160px; padding: 12px; margin-top: 8px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: monospace; font-size: 0.95rem; line-height: 1.5; resize: vertical; background: #fff; color: #334155; box-sizing: border-box; }
+        textarea:focus { outline: 2px solid #2563eb; border-color: transparent; }
+
+        .copy-btn { margin-top: 8px; background: white; border: 1px solid #cbd5e1; color: #334155; padding: 8px 16px; border-radius: 6px; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; }
+        .copy-btn:hover { background: #f1f5f9; border-color: #94a3b8; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <h1>Referenz-Prompt erstellen</h1>
+    <p class="desc">Lade ein Foto hoch. Die KI erstellt einen Prompt, der Stil & Licht analysiert, aber die Gesichtszüge exakt beibehält.</p>
+
+    <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+        <span id="fileName">Klicken, um Bild zu wählen (JPG, PNG)</span>
+        <input type="file" id="fileInput" accept="image/*" onchange="updateFileName()">
+    </div>
+
+    <button id="generateBtn" onclick="generatePrompt()">Prompt generieren</button>
+
+    <div class="result-box" id="resultBox">
+        <label>Dein Prompt für die KI:</label>
+        <textarea id="promptOutput" readonly></textarea>
+        <button class="copy-btn" onclick="copyText()">📋 Kopieren</button>
+    </div>
+</div>
+
+<script>
+    function updateFileName() {
+        const input = document.getElementById('fileInput');
+        const span = document.getElementById('fileName');
+        if (input.files.length > 0) span.innerText = input.files[0].name;
+    }
+
+    async function generatePrompt() {
+        const fileInput = document.getElementById('fileInput');
+        const output = document.getElementById('promptOutput');
+        const box = document.getElementById('resultBox');
+        const btn = document.getElementById('generateBtn');
+
+        if (fileInput.files.length === 0) {
+            alert("Bitte wähle zuerst ein Bild aus.");
+            return;
+        }
+        
+        // UI Loading State
+        btn.innerText = "Analysiere Bild...";
+        btn.disabled = true;
+        box.style.display = 'none';
+
+        const file = fileInput.files[0];
+        const reader = new FileReader();
+
+        reader.onload = async function() {
+            const base64 = reader.result.split(',')[1];
+            
+            try {
+                const response = await fetch('/.netlify/functions/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64, mime_type: file.type })
+                });
+
+                if (!response.ok) throw new Error("Server Fehler");
+
+                const data = await response.json();
+                output.value = data.prompt;
+                box.style.display = 'block';
+            } catch (e) {
+                alert("Fehler: " + e.message);
+            } finally {
+                btn.innerText = "Prompt generieren";
+                btn.disabled = false;
+            }
+        };
+        reader.readAsDataURL(file);
+    }
+
+    function copyText() {
+        const txt = document.getElementById('promptOutput');
+        txt.select();
+        document.execCommand('copy');
+        alert("In Zwischenablage kopiert!");
+    }
+</script>
+
+</body>
+</html>
