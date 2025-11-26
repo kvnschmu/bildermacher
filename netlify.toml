@@ -1,12 +1,11 @@
 [functions]
   directory = "netlify/functions"
-  # Wichtig: Wir benötigen keinen node_bundler für Python, aber wir setzen das Timeout
-  timeout = 26
+  # DIES WAR DER FEHLER: Das Timeout darf nicht direkt unter [functions] stehen.
 
 # WICHTIG: Definiert den Build-Schritt, um die Python-Funktion ausführbar zu machen.
 [build]
   command = "chmod +x netlify/functions/generate.py"
   
-# Die sektionsspezifische Timeout-Definition ist nicht mehr nötig, da sie oben gesetzt ist.
-# [functions.generate]
-#   timeout = 26
+# Wir definieren das Timeout wieder spezifisch für unsere 'generate' Funktion.
+[functions.generate]
+  timeout = 26
