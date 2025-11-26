@@ -3,14 +3,22 @@ import json
 import base64
 import google.generativeai as genai
 
+# Hilfsfunktion, um den Event Body zuverlässig zu dekodieren
+def decode_netlify_body(event):
+    body = event['body']
+    # Netlify kodiert den Body manchmal Base64, besonders bei komplexen Payloads
+    if event.get('isBase64Encoded'):
+        body = base64.b64decode(body).decode('utf-8')
+    return json.loads(body)
+
 def handler(event, context):
     # Nur POST-Anfragen erlauben
     if event['httpMethod'] != 'POST':
         return {'statusCode': 405, 'body': 'Method Not Allowed'}
 
     try:
-        # 1. Daten aus dem Frontend lesen
-        body = json.loads(event['body'])
+        # 1. Daten aus dem Frontend zuverlässig lesen
+        body = decode_netlify_body(event)
         image_data = body.get('image')
         mime_type = body.get('mime_type')
 
@@ -54,8 +62,15 @@ def handler(event, context):
         Gib NUR den fertigen Prompt zurück.
         """
 
-        # 4. Bild vorbereiten
-        image_parts = [{"mime_type": mime_type, "data": base64.b64decode(image_data)}]
+        # 4. Bild vorbereiten (mit robusterer Base64-Dekodierung)
+        # Wir müssen sicherstellen, dass wir gültiges Base64 an b64decode übergeben,
+        # besonders wichtig ist es, Leerzeichen zu entfernen, die manchmal eingefügt werden.
+        cleaned_image_data = image_data.strip().replace('\n', '').replace('\r', '')
+
+        # Hier verwenden wir die Standard-Base64-Dekodierung
+        image_bytes = base64.b64decode(cleaned_image_data)
+        
+        image_parts = [{"mime_type": mime_type, "data": image_bytes}]
 
         # 5. Generierung
         response = model.generate_content([system_prompt, image_parts[0]])
@@ -67,4 +82,7 @@ def handler(event, context):
         }
 
     except Exception as e:
-        return {'statusCode': 500, 'body': json.dumps({'error': str(e)})}
+        # Hier werden alle Fehler (inkl. Base64-Dekodierfehlern) abgefangen.
+        # Im Netlify Function Log sehen Sie nun den genauen Fehler, falls es nicht
+        # an der Body-Dekodierung liegt.
+        return {'statusCode': 500, 'body': json.dumps({'error': str(e), 'debug_message': 'Fehler bei der Funktionsausführung'})}
