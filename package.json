@@ -1,0 +1,9 @@
+{
+  "name": "bildermacher",
+  "version": "1.0.0",
+  "description": "Image generation project using Netlify Functions",
+  "dependencies": {},
+  "devDependencies": {
+    "@netlify/plugin-functions-python": "^0.6.0" 
+  }
+}
