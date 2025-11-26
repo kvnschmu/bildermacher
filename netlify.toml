@@ -9,3 +9,5 @@
 # Wir definieren das Timeout wieder spezifisch für unsere 'generate' Funktion.
 [functions.generate]
   timeout = 26
+[[plugins]]
+package = "@netlify/plugin-functions-python"
