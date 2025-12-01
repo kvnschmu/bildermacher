@@ -2,7 +2,5 @@
   "name": "bildermacher",
   "version": "1.0.0",
   "dependencies": {},
-  "devDependencies": {
-    "@netlify/plugin-functions-python": "*" 
-  }
+  "devDependencies": {}
 }
